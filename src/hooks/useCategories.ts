@@ -1,8 +1,6 @@
-"use client"
-
-import { useState, useEffect, useCallback } from "react"
-import type { CategoryModel } from "@/types/category"
-import CategoryService from "@/services/category-service"
+import { useState, useEffect, useCallback } from 'react'
+import type { CategoryModel } from '@/types/category'
+import CategoryService from '@/services/category-service'
 
 const useCategories = () => {
   const [foodCategory, setFoodCategory] = useState<CategoryModel[]>([])
@@ -24,7 +22,7 @@ const useCategories = () => {
         setFoodCategory([])
       }
     } catch (err) {
-      setError("Failed to fetch categories")
+      setError('Failed to fetch categories')
       console.error(err)
     } finally {
       setLoading(false)
@@ -35,10 +33,7 @@ const useCategories = () => {
     fetchAllCategories()
   }, [fetchAllCategories])
 
-
-
   return { foodCategory, loading, error }
 }
 
 export default useCategories
-

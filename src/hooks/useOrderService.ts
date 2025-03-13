@@ -1,86 +1,56 @@
-// "use client"
+import { useState, useCallback, useEffect } from 'react'
+import type { Order, OrderItemsResult } from '@/types/order'
+import OrderService from '@/services/order-service'
+import type ApiResponse from '@/apis/apiUtils'
 
-// import { useState, useCallback, useEffect } from "react"
-// import type { CreateOrderResponse, AddFoodResponse, Order, } from "@/types/order"
-// import type ApiResponse from "@/apis/apiUtils"
-// import OrderService from "@/services/order-service"
-// import useTable from "./useTable"
+const useOrderService = () => {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
 
-// export function useOrderService() {
-//     const [isLoading, setIsLoading] = useState(false)
-//     const [error, setError] = useState<string | null>(null)
-//     const [order, setOrder] = useState<Order[]>([])
-//     const { currentOrderId_ } = useTable()
+  const fetchAllOrders = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const orderService = OrderService.getInstance()
+      const response = await orderService.getAllOrders()
+      if (response.success && response.result.items) {
+        setOrders(response.result.items)
+      } else {
+        setOrders([])
+      }
+    } catch (error) {
+      setError('Failed to fetch products')
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+  useEffect(() => {
+    fetchAllOrders()
+  }, [fetchAllOrders])
+  const getOrderById = useCallback(async (orderId: string): Promise<ApiResponse<OrderItemsResult> | null> => {
+    if (!orderId) {
+      return null
+    }
 
-//     const createOrder = useCallback(async (tableIdJson: string): Promise<ApiResponse<CreateOrderResponse> | null> => {
-//         setIsLoading(true)
-//         setError(null)
-//         try {
-//             const response = await OrderService.getInstance().createOrder(tableIdJson)
-//             return response
-//         } catch (err) {
-//             setError("Error creating order")
-//             return null
-//         } finally {
-//             setIsLoading(false)
-//         }
-//     }, [])
+    setLoading(true)
+    setError(null)
 
-//     const addFoodToOrder = useCallback(async (orderDataJson: string): Promise<ApiResponse<AddFoodResponse> | null> => {
-//         setIsLoading(true)
-//         setError(null)
-//         try {
-//             const response = await OrderService.getInstance().addFoodToOrder(orderDataJson)
-//             return response
-//         } catch (err) {
-//             setError("Error add Food to Order")
-//             return null
-//         } finally {
-//             setIsLoading(false)
-//         }
-//     }, [])
+    try {
+      const orderService = OrderService.getInstance()
+      const response = await orderService.getOrderById(orderId)
+      return response
+    } catch (error) {
+      setError('Failed to fetch order details')
+      console.error(error)
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
+  return { orders, loading, error, fetchAllOrders, getOrderById }
+}
 
-
-//     const fetchOrderById = useCallback(async () => {
-
-//         if (!currentOrderId_) {
-//             setIsLoading(true)
-//             setError(null)
-//             return
-//         }
-//         try {
-//             const response = await OrderService.getInstance().getOrderById(`${currentOrderId_}`)
-//             if (response.success && response.result) {
-//                 setOrder([response.result])
-//             } else {
-//                 setOrder([])
-//             }
-
-//         } catch (err) {
-//             setError("error get orderById")
-//             return null
-//         } finally {
-//             setIsLoading(false)
-//         }
-//     }, [currentOrderId_])
-
-
-
-
-//     useEffect(() => {
-//         fetchOrderById()
-//     }, [fetchOrderById])
-
-
-
-//     return {
-//         fetchOrderById,
-//         order,
-//         createOrder,
-//         addFoodToOrder,
-//         isLoading,
-//         error,
-//     }
-// }
-
+export default useOrderService
