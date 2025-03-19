@@ -1,26 +1,22 @@
-'use client'
-
 import type React from 'react'
-
-import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { useState, useEffect, useCallback } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ProductModel } from '@/types/product'
-import type { CategoryModel } from '@/types/category'
-
-// Sample categories
-const sampleCategories: CategoryModel[] = [
-  { id: '1', name: 'Pizza', description: 'Italian pizza' },
-  { id: '2', name: 'Pasta', description: 'Italian pasta' },
-  { id: '3', name: 'Burgers', description: 'American burgers' },
-  { id: '4', name: 'Salads', description: 'Fresh salads' },
-  { id: '5', name: 'Desserts', description: 'Sweet desserts' },
-  { id: '6', name: 'Drinks', description: 'Refreshing beverages' }
-]
+import useCategories from '@/hooks/useCategories'
+import FileUpload from '@/components/uploadImage'
+import { Loader2 } from 'lucide-react'
 
 interface EditFoodDialogProps {
   food: ProductModel | null
@@ -30,6 +26,9 @@ interface EditFoodDialogProps {
 }
 
 export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { foodCategory } = useCategories()
+
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -46,7 +45,7 @@ export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDia
         id: food.id,
         name: food.name,
         price: food.price.toString(),
-        description: food.description,
+        description: food.description || '',
         categoryId: food.categoryId,
         productType: food.productType.toString(),
         image: food.image
@@ -63,23 +62,39 @@ export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDia
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageChange = useCallback((base64: string) => {
+    setFormData((prev) => ({ ...prev, image: base64 }))
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!food) return
 
-    // Create updated food object
-    const updatedFood: ProductModel = {
-      ...food,
-      name: formData.name,
-      price: Number.parseFloat(formData.price),
-      description: formData.description,
-      categoryId: formData.categoryId,
-      productType: Number.parseInt(formData.productType),
-      image: formData.image,
-      category: sampleCategories.find((c) => c.id === formData.categoryId) || food.category
-    }
+    setIsSubmitting(true)
 
-    onSave(updatedFood)
+    try {
+      // Create updated food object
+      const updatedFood: ProductModel = {
+        ...food,
+        name: formData.name,
+        price: Number.parseFloat(formData.price),
+        description: formData.description,
+        categoryId: formData.categoryId,
+        productType: Number.parseInt(formData.productType),
+        image: formData.image,
+        category: foodCategory.find((c) => c.id === formData.categoryId) || food.category
+      }
+
+      // call an API to update the food
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      onSave(updatedFood)
+    } catch (error) {
+      console.error('Error updating food:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (!food) return null
@@ -89,6 +104,7 @@ export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDia
       <DialogContent className='sm:max-w-[550px]'>
         <DialogHeader>
           <DialogTitle>Chỉnh sửa món ăn</DialogTitle>
+          <DialogDescription>Cập nhật thông tin chi tiết về món ăn</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className='space-y-4 py-4'>
           <div className='grid grid-cols-2 gap-4'>
@@ -108,9 +124,12 @@ export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDia
               <Input
                 id='price'
                 name='price'
-                type='number'
+                type='text'
                 value={formData.price}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '')
+                  setFormData((prev) => ({ ...prev, price: value }))
+                }}
                 placeholder='Nhập giá'
                 required
               />
@@ -129,7 +148,7 @@ export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDia
             />
           </div>
 
-          <div className='grid grid-cols-2 gap-4'>
+          <div className=' gap-4'>
             <div className='space-y-2'>
               <Label htmlFor='categoryId'>Danh mục</Label>
               <Select value={formData.categoryId} onValueChange={(value) => handleSelectChange('categoryId', value)}>
@@ -137,7 +156,7 @@ export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDia
                   <SelectValue placeholder='Chọn danh mục' />
                 </SelectTrigger>
                 <SelectContent>
-                  {sampleCategories.map((category) => (
+                  {foodCategory.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
@@ -145,37 +164,27 @@ export function EditFoodDialog({ food, open, onOpenChange, onSave }: EditFoodDia
                 </SelectContent>
               </Select>
             </div>
-            <div className='space-y-2'>
-              <Label htmlFor='productType'>Loại món</Label>
-              <Select value={formData.productType} onValueChange={(value) => handleSelectChange('productType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Chọn loại món' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='1'>Món chính</SelectItem>
-                  <SelectItem value='2'>Tráng miệng</SelectItem>
-                  <SelectItem value='3'>Đồ uống</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <div className='space-y-2'>
-            <Label htmlFor='image'>Hình ảnh URL</Label>
-            <Input
-              id='image'
-              name='image'
-              value={formData.image}
-              onChange={handleChange}
-              placeholder='Nhập URL hình ảnh'
-            />
+            <Label htmlFor='image'>Hình ảnh món ăn</Label>
+            <FileUpload onImageChange={handleImageChange} value={formData.image} />
           </div>
 
           <DialogFooter>
-            <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
+            <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Hủy
             </Button>
-            <Button type='submit'>Lưu thay đổi</Button>
+            <Button type='submit' disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Đang lưu...
+                </>
+              ) : (
+                'Lưu thay đổi'
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -10,7 +10,9 @@ interface FileUploadProps {
 
 export default function FileUpload({ onImageChange, value }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null)
-  const [base64Image, setBase64Image] = useState<string | null>(value || null)
+  const [base64Image, setBase64Image] = useState<string | null>(
+    value ? value.replace(/^data:image\/[a-z]+;base64,/, '') : null
+  )
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const isFirstRender = useRef(true)
   const previousValue = useRef(value)
@@ -18,7 +20,7 @@ export default function FileUpload({ onImageChange, value }: FileUploadProps) {
   // Handle external value changes
   useEffect(() => {
     if (value !== previousValue.current) {
-      setBase64Image(value || null)
+      setBase64Image(value ? value.replace(/^data:image\/[a-z]+;base64,/, '') : null)
       previousValue.current = value
     }
   }, [value])
@@ -37,11 +39,12 @@ export default function FileUpload({ onImageChange, value }: FileUploadProps) {
       setIsLoading(true)
       try {
         const base64 = await fileToBase64(file)
-        setBase64Image(base64)
+        const base64WithoutPrefix = base64.replace(/^data:image\/[a-z]+;base64,/, '')
+        setBase64Image(base64WithoutPrefix)
 
         // Only call onImageChange if the base64 value has actually changed
-        if (onImageChange && base64 !== base64Image) {
-          onImageChange(base64)
+        if (onImageChange && base64WithoutPrefix !== base64Image) {
+          onImageChange(base64WithoutPrefix)
         }
       } catch (error) {
         console.error('Error converting file to base64:', error)
@@ -107,7 +110,7 @@ export default function FileUpload({ onImageChange, value }: FileUploadProps) {
             ) : (
               <div className='space-y-3'>
                 <div className='border rounded-lg overflow-hidden flex justify-center'>
-                  <img src={base64Image || '/placeholder.svg'} alt='Preview' className='h-32 object-contain' />
+                  <img src={`data:image/jpeg;base64,${base64Image}`} alt='Preview' className='h-32 object-contain' />
                 </div>
                 <div className='flex justify-end'>
                   <Button

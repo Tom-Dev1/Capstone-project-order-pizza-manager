@@ -190,10 +190,7 @@ export function OrdersList() {
             <TableRow className='bg-muted/50'>
               <TableHead className='w-[60px] text-center'>STT</TableHead>
               <TableHead className='w-[120px]'>
-                <div className='flex items-center gap-2 cursor-pointer' onClick={() => handleSort('orderCode')}>
-                  Mã đơn
-                  <ArrowUpDown className='h-4 w-4' />
-                </div>
+                <div className='flex items-center gap-2 '>Mã đơn</div>
               </TableHead>
               <TableHead>
                 <div className='flex items-center gap-2 cursor-pointer' onClick={() => handleSort('tableCode')}>
@@ -207,7 +204,12 @@ export function OrdersList() {
                   <ArrowUpDown className='h-4 w-4' />
                 </div>
               </TableHead>
-              <TableHead>Thời gian kết thúc</TableHead>
+              <TableHead>
+                <div className='flex items-center gap-2 cursor-pointer' onClick={() => handleSort('endTime')}>
+                  Thời gian kết thúc
+                  <ArrowUpDown className='h-4 w-4' />
+                </div>
+              </TableHead>
               <TableHead>
                 <div className='flex items-center gap-2 cursor-pointer' onClick={() => handleSort('totalPrice')}>
                   Tổng tiền
@@ -269,7 +271,7 @@ export function OrdersList() {
         <p className='text-sm text-muted-foreground'>
           Hiển thị {paginatedOrders.length} trên tổng số {filteredOrders.length} đơn hàng
         </p>
-        <Pagination>
+        <Pagination className='cursor-pointer'>
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
