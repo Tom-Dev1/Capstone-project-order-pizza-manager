@@ -21,6 +21,7 @@ interface TableCardProps {
     onOpenQRCode: (table: TableResponse) => void
     onOpenUpdateDialog: (table: TableResponse) => void
     onOpenLockDialog: (table: TableResponse) => void
+    onOpenReserveDialog: (table: TableResponse) => void
 }
 
 export function TableCard({
@@ -34,6 +35,7 @@ export function TableCard({
     onOpenQRCode,
     onOpenUpdateDialog,
     onOpenLockDialog,
+    onOpenReserveDialog,
 }: TableCardProps) {
     // Function to get status color
     const getStatusColor = (status: string) => {
@@ -87,6 +89,7 @@ export function TableCard({
                             size="sm"
                             className="flex-1 font-medium text-xs sm:text-sm py-1 h-7 sm:h-8 border-blue-200 text-blue-700 hover:bg-blue-50"
                             disabled={isLoading}
+                            onClick={() => onOpenReserveDialog(table)}
                         >
                             Đặt trước
                         </Button>
@@ -117,7 +120,26 @@ export function TableCard({
                 )
             case "Reserved":
                 return (
-                    <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-4">{/* Reserved state buttons would go here if needed */}</div>
+                    <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-4">
+                        <Button
+                            onClick={() => onCloseTable(table.id)}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 font-medium text-xs sm:text-sm py-1 h-7 sm:h-8 border-red-200 text-red-700 hover:bg-red-50"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Đang xử lý..." : "Đóng bàn"}
+                        </Button>
+                        <Button
+                            onClick={() => onOpenLockDialog(table)}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 font-medium text-xs sm:text-sm py-1 h-7 sm:h-8 border-amber-200 text-amber-700 hover:bg-amber-50"
+                            disabled={isLoading}
+                        >
+                            Bảo trì
+                        </Button>
+                    </div>
                 )
             case "Locked":
                 return (
@@ -150,14 +172,14 @@ export function TableCard({
     return (
         <Card
             className={`overflow-hidden transition-all border-l-4 truncate ${table.status === "Opening"
-                    ? "border-l-emerald-500"
-                    : table.status === "Reserved"
-                        ? "border-l-blue-500"
-                        : table.status === "Closing"
-                            ? "border-l-red-500"
-                            : table.status === "Locked"
-                                ? "border-l-amber-500"
-                                : "border-l-gray-300"
+                ? "border-l-emerald-500"
+                : table.status === "Reserved"
+                    ? "border-l-blue-500"
+                    : table.status === "Closing"
+                        ? "border-l-red-500"
+                        : table.status === "Locked"
+                            ? "border-l-amber-500"
+                            : "border-l-gray-300"
                 } hover:scale-[1.02] transition-transform duration-200`}
         >
             <CardHeader
@@ -217,6 +239,15 @@ export function TableCard({
                                 >
                                     <Lock className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
                                     Khóa bàn
+                                </DropdownMenuItem>
+                            )}
+                            {(table.status === "Closing") && (
+                                <DropdownMenuItem
+                                    onClick={() => onOpenReserveDialog(table)}
+                                    className="flex items-center cursor-pointer hover:bg-amber-50 text-xs sm:text-sm py-1.5"
+                                >
+                                    <Clock className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                                    Đặt trước
                                 </DropdownMenuItem>
                             )}
                         </DropdownMenuContent>

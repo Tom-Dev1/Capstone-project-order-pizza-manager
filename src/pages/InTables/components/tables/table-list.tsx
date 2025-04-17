@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Coffee, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,6 +13,8 @@ import { TableDetailsDialog } from "../table-details.dialog"
 import { TableQRCode } from "../table-qr-code"
 import { TableUpdateDialog } from "../table-update-dialog"
 import { TableAddDialog } from "../table-add-dialog"
+import { TableReserveDialog } from "./table-reserve-dialog"
+import { showToastSuccess } from "@/components/toast-notifications-table"
 
 interface TableListProps {
     tables: TableResponse[]
@@ -28,6 +28,7 @@ export function TableList({ tables, onTableUpdated }: TableListProps) {
     const [showAddDialog, setShowAddDialog] = useState(false)
     const [showUpdateDialog, setShowUpdateDialog] = useState(false)
     const [showLockDialog, setShowLockDialog] = useState(false)
+    const [showReserveDialog, setShowReserveDialog] = useState(false)
     const [runningTimers, setRunningTimers] = useState<{ [key: string]: boolean }>({})
     const [loadingTableIds, setLoadingTableIds] = useState<string[]>([]) // Track which tables are being updated
     const { zones_ } = useZone()
@@ -43,8 +44,10 @@ export function TableList({ tables, onTableUpdated }: TableListProps) {
         try {
             const tableSevice = TableService.getInstance()
             const res = await tableSevice.putOpenTable(tableId)
+            const table = tables.find(t => t.id === tableId)
+            const tableCode = table?.code || `ID: ${tableId}`
             if (res.success) {
-                toast.success("Bàn đã được mở")
+                toast.success(`Bàn ${tableCode} đã được mở`)
             } else {
                 toast.error(res.message)
             }
@@ -66,8 +69,15 @@ export function TableList({ tables, onTableUpdated }: TableListProps) {
         try {
             const tableSevice = TableService.getInstance()
             const res = await tableSevice.putCloseTable(tableId)
+            const table = tables.find(t => t.id === tableId)
+            const tableCode = table?.code || `ID: ${tableId}`
             if (res.success) {
-                toast.success("Bàn đã được đóng")
+                // toast.success(`Bàn ${tableCode} đã được đóng`, { duration: 1000000 })
+                showToastSuccess({
+                    tableCode,
+                    duration: 5000,
+
+                })
             } else {
                 toast.error(res.message)
             }
@@ -89,8 +99,54 @@ export function TableList({ tables, onTableUpdated }: TableListProps) {
         try {
             const tableService = TableService.getInstance()
             const res = await tableService.putLockTable(tableId, note)
+            const table = tables.find(t => t.id === tableId)
+
+            const tableCode = table?.code || `ID: ${tableId}`
             if (res.success) {
-                toast.success("Bàn đã được khóa để bảo trì")
+                showToastSuccess({
+                    tableCode,
+                    duration: 5000,
+                    note
+
+                })
+                // toast.custom((t) => (
+                //     <div>
+                //         <div className="flex items-start gap-3 bg-[#ECFDF3] text-[#008A2E] border border-green-200 py-4 px-3 rounded-md shadow-sm w-[356px] max-w-sm">
+                //             {/* SVG icon bạn gửi */}
+                //             <div className="flex">
+                //                 <svg
+                //                     xmlns="http://www.w3.org/2000/svg"
+                //                     viewBox="0 0 20 20"
+                //                     fill="currentColor"
+                //                     height="20"
+                //                     width="20"
+                //                     className=" text-green-700 mr-0.5"
+                //                 >
+                //                     <path
+                //                         fillRule="evenodd"
+                //                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                //                         clipRule="evenodd"
+                //                     />
+                //                 </svg>
+                //                 {/* Nội dung */}
+                //                 <div className="text-[13px] font-medium ml-1">
+                //                     Bàn <strong>{tableCode}</strong> đã được khóa để bảo trì<br />
+                //                     <span className="text-xs text-green-600">Lý do: "{note}"</span>
+                //                 </div>
+                //             </div>
+
+                //             <button
+                //                 onClick={() => toast.dismiss(t)}
+                //                 className="ml-auto text-xs text-green-600 hover:underline"
+                //             >
+                //                 Đóng
+                //             </button>
+                //         </div>
+                //     </div>
+                // ), { duration: 10000000 });
+
+
+                // toast.success(`Bàn ${tableCode} đã được khóa để bảo trì với lý do: "${note}"`)
                 setShowLockDialog(false)
             } else {
                 toast.error(res.message)
@@ -127,7 +183,10 @@ export function TableList({ tables, onTableUpdated }: TableListProps) {
         setSelectedTable(table)
         setShowLockDialog(true)
     }
-
+    const handleOpenReserveDialog = (table: TableResponse) => {
+        setSelectedTable(table)
+        setShowReserveDialog(true)
+    }
     // Group tables by zone
     const tablesByZone = tables.reduce<Record<string, TableResponse[]>>((acc, table) => {
         const zoneId = table.zoneId
@@ -171,6 +230,7 @@ export function TableList({ tables, onTableUpdated }: TableListProps) {
                     onOpenQRCode={handleOpenQRCode}
                     onOpenUpdateDialog={handleOpenUpdateDialog}
                     onOpenLockDialog={handleOpenLockDialog}
+                    onOpenReserveDialog={handleOpenReserveDialog}
                 />
             ))}
 
@@ -190,6 +250,12 @@ export function TableList({ tables, onTableUpdated }: TableListProps) {
                         open={showLockDialog}
                         onOpenChange={setShowLockDialog}
                         onLockTable={handleLockTable}
+                        isLoading={loadingTableIds.includes(selectedTable.id)}
+                    />
+                    <TableReserveDialog
+                        table={selectedTable}
+                        open={showReserveDialog}
+                        onOpenChange={setShowReserveDialog}
                         isLoading={loadingTableIds.includes(selectedTable.id)}
                     />
                 </>

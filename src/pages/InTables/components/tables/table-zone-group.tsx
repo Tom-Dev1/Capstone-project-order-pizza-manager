@@ -16,6 +16,7 @@ interface TableZoneGroupProps {
     onOpenQRCode: (table: TableResponse) => void
     onOpenUpdateDialog: (table: TableResponse) => void
     onOpenLockDialog: (table: TableResponse) => void
+    onOpenReserveDialog: (table: TableResponse) => void
 }
 
 export function TableZoneGroup({
@@ -31,6 +32,7 @@ export function TableZoneGroup({
     onOpenQRCode,
     onOpenUpdateDialog,
     onOpenLockDialog,
+    onOpenReserveDialog,
 }: TableZoneGroupProps) {
     return (
         <div className="mb-6 last:mb-0">
@@ -56,6 +58,7 @@ export function TableZoneGroup({
                         onOpenQRCode={onOpenQRCode}
                         onOpenUpdateDialog={onOpenUpdateDialog}
                         onOpenLockDialog={onOpenLockDialog}
+                        onOpenReserveDialog={onOpenReserveDialog}
                     />
                 ))}
             </div>
